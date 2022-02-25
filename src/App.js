@@ -14,8 +14,8 @@ function App() {
   return (
     <form onSubmit={handleSubmit}>
     <div>
-      <label>First Name</label>
-      <input type="text" name="firstName" onChange={handleInputChange} value={inputs.firstName} required />
+      <label htmlFor="firsName">First Name</label>
+      <input id="firsName" type="text" name="firstName" onChange={handleInputChange} value={inputs.firstName} required />
       <label>Last Name</label>
       <input type="text" name="lastName" onChange={handleInputChange} value={inputs.lastName} required />
     </div>
