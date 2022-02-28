@@ -1,7 +1,8 @@
 import { Table, TableThCell, TableCell, TableRow, TableContainer, TableFilterContainer } from 'components/Table';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import LoadingLogo from 'components/LoadingLogo';
 import Checkbox from 'components/Input/Checkbox';
+import debounce from "lodash/debounce";
 
 // async function getPeople(params = '') {
 //   return fetch(`http://localhost:4002/people?${params}`, { method: 'GET' }).then((response) =>
@@ -46,39 +47,25 @@ export default function PeopleTable() {
       : setFilters(filters.concat(filter));
   }
 
-  const timeout = useRef();
+  // Delay search by 600ms
+  const delayedSearch = useCallback(
+    debounce((params) => {
+      doGet(params);
+    }, 600),
+    []
+  );
+
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    const params = {
-      filters,
-      search
-    };
-    if (timeout.current) clearTimeout(timeout.current);
-
-    timeout.current = setTimeout(() => doGet(params), 100);
-    // setTimeout(() => doGet(params), 1000);
   }
-  // const timeout = React.useRef();
-
-  // function onSearchChange(action, state) {
-  //   const params = {
-  //     search: state.search,
-  //   };
-
-  //   if (timeout.current) clearTimeout(timeout.current);
-
-  //   timeout.current = setTimeout(() => doGet(params), 500);
-  // }
-
+  //on search and filter change retrieve data again
   useEffect(() => {
     const params = {
       filters,
       search
     };
-    doGet(params);
-  }, [filters]);
-
-  
+    delayedSearch(params);
+  }, [filters, search]);
 
   if (!people) {
     return <LoadingLogo />;
