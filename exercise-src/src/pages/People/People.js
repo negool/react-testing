@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import PeopleTable from './PeopleTable';
 import LinkPlayground from 'components/LinkPlayground';
@@ -8,11 +9,31 @@ const Container = styled.main`
   width: 100%;
   max-width: var(--layout-width);
 `;
-
+const Header = styled.h1 `
+  font-size: 1.624rem;
+  font-family: Inter;
+  font-weight: 500;
+  display: inline-block;
+  margin: 6px 8px 39px 0px;
+  line-height: 32px;
+  color: var(--colors-darkBlue); 
+`
+const Counter = styled.span `
+  color: var(--colors-bayoux);
+  font-family: Inter;
+  font-size: 14px;
+`
+const peopleServiceUrl = 'http://localhost:4002/people';
 export default function People() {
+  const [count, setCount] = useState(0);
+  const handleCountChange = (curCount) => {
+    setCount(curCount);
+  }
   return (
     <Container>
-      <PeopleTable />
+      <Header>People</Header>
+      <Counter>{count} members</Counter>
+      <PeopleTable url={peopleServiceUrl} handleCountUpdate={handleCountChange} />
       <LinkPlayground />
     </Container>
   );

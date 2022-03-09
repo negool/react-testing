@@ -1,20 +1,22 @@
 import { Table, TableThCell, TableCell, TableRow, TableContainer, TableFilterContainer } from 'components/Table';
 import { useState, useEffect, useCallback } from 'react';
 import LoadingLogo from 'components/LoadingLogo';
-import Checkbox from 'components/Input/Checkbox';
+import Checkbox from 'components/Checkbox';
+import SearchInput from 'components/SearchInput/SearchInput';
 import debounce from "lodash/debounce";
+
 
 // async function getPeople(params = '') {
 //   return fetch(`http://localhost:4002/people?${params}`, { method: 'GET' }).then((response) =>
 //     response.json()
 //   );
 // }
-async function getPeople(searchFilters) {
+async function getPeople(url, searchFilters) {
   let params = searchFilters.filters.join('&');
   if (searchFilters.search) {
     params += `&name_like=${searchFilters.search}`;
   }
-  return fetch(`http://localhost:4002/people?${params}`, { method: 'GET' }).then((response) =>
+  return fetch(`${url}?${params}`, { method: 'GET' }).then((response) =>
     response.json()
   );
 }
@@ -22,8 +24,8 @@ async function getPeople(searchFilters) {
 // Again, feel free to modify any code as much as you need.
 // We know some of these things are incorrect, so please
 // show us how to do it right! ✨
-export default function PeopleTable() {
-  const [people, setPeople] = useState(null);
+export default function PeopleTable(props) {
+  const [people, setPeople] = useState([]);
   const [filters, setFilters] = useState([]);
   const [search, setSearch] = useState("");
 
@@ -31,7 +33,9 @@ export default function PeopleTable() {
   const initialSearch = '';
 
   const doGet = useCallback(async (params) => {
-    setPeople(await getPeople(params));
+    const result = await getPeople(props.url, params);
+    setPeople(result);
+    props.handleCountUpdate(result.length);
   }, []);
 
   useEffect(() => {
@@ -76,8 +80,16 @@ export default function PeopleTable() {
       <TableContainer>
         <TableFilterContainer>
           <div>
-            <label htmlFor="name">Search by Name:</label>
-            <input id="name" type="text" name="name" value={search} onChange={handleSearchChange}/>
+            <SearchInput 
+              id="name"
+              name="name"
+              value={search}
+              onChange={handleSearchChange}
+              label="Search People"
+              placeholder="Search People..."
+            />
+            {/* <label htmlFor="name">Search by Name:</label>
+            <input id="name" type="text" name="name" value={search} onChange={handleSearchChange}/> */}
           </div>
           <div>
             <Checkbox

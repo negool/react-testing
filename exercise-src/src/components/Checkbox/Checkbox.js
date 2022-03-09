@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import * as Styled from "./Checkbox.styled";
 
-const Checkbox = ({ id, name, value, label, onChange, ...props }) => {
+export default function Checkbox({ id, name, value, label, onChange, ...props }) {
   return (
     <Styled.Container>
       <Styled.Label htmlFor={id}>{label}
@@ -14,5 +14,3 @@ const Checkbox = ({ id, name, value, label, onChange, ...props }) => {
     </Styled.Container>
   );
 }
-
-export default Checkbox;
