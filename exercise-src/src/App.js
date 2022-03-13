@@ -10,6 +10,9 @@ import Playground from './pages/Playground';
 import People from './pages/People';
 import AddEditPeople from './pages/AddEditPeople';
 
+const peopleServiceUrl = 'http://localhost:4002/people';
+
+
 export default function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -18,7 +21,7 @@ export default function App() {
         <Header />
         <Switch>
           <Route path="/people" exact>
-            <People />
+            <People url={peopleServiceUrl}/>
           </Route>
           <Route path="/people/new">
             <AddEditPeople />

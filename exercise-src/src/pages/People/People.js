@@ -23,8 +23,7 @@ const Counter = styled.span `
   font-family: Inter;
   font-size: 14px;
 `
-const peopleServiceUrl = 'http://localhost:4002/people';
-export default function People() {
+export default function People({url}) {
   const [count, setCount] = useState(0);
   const handleCountChange = (curCount) => {
     setCount(curCount);
@@ -33,7 +32,7 @@ export default function People() {
     <Container>
       <Header>People</Header>
       <Counter>{count} members</Counter>
-      <PeopleTable url={peopleServiceUrl} handleCountUpdate={handleCountChange} />
+      <PeopleTable url={url} handleCountUpdate={handleCountChange} />
       <LinkPlayground />
     </Container>
   );

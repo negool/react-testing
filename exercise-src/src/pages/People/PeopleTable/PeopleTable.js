@@ -32,17 +32,22 @@ export default function PeopleTable(props) {
   const initialFilters = [];
   const initialSearch = '';
 
-  const doGet = useCallback(async (params) => {
+  const doGet = useCallback(async (params, mounted) => {
+    
     const result = await getPeople(props.url, params);
-    setPeople(result);
-    props.handleCountUpdate(result.length);
+    if (mounted) {
+      setPeople(result);
+      props.handleCountUpdate(result.length);
+    }
   }, []);
 
   useEffect(() => {
+    let mounted = true;
     doGet({
       filters: initialFilters,
       search: initialSearch
-    });
+    }, mounted);
+    return () => { mounted = false; }
   }, []);
 
   const handleFilterChange = (filter) => {
@@ -53,8 +58,8 @@ export default function PeopleTable(props) {
 
   // Delay search by 600ms
   const delayedSearch = useCallback(
-    debounce((params) => {
-      doGet(params);
+    debounce((params, mounted) => {
+      doGet(params, mounted);
     }, 600),
     []
   );
@@ -64,11 +69,13 @@ export default function PeopleTable(props) {
   }
   //on search and filter change retrieve data again
   useEffect(() => {
+    let mounted = true;
     const params = {
       filters,
       search
     };
-    delayedSearch(params);
+    delayedSearch(params, mounted);
+    return () => { mounted = false; }
   }, [filters, search]);
 
   if (!people) {
@@ -87,6 +94,7 @@ export default function PeopleTable(props) {
               onChange={handleSearchChange}
               label="Search People"
               placeholder="Search People..."
+              data-testid="search"
             />
             {/* <label htmlFor="name">Search by Name:</label>
             <input id="name" type="text" name="name" value={search} onChange={handleSearchChange}/> */}
@@ -99,6 +107,7 @@ export default function PeopleTable(props) {
               data-type="employment"
               label="Contractor"
               checked={filters.includes('employment=contractor')}
+              data-testid="contractor"
             />
             <Checkbox
               id="employee"
@@ -107,6 +116,7 @@ export default function PeopleTable(props) {
               data-type="employment"
               label="Employee"
               checked={filters.includes('employment=employee')}
+              data-testid="employee"
             />
           </div>
         </TableFilterContainer>

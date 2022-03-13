@@ -1,100 +1,188 @@
 import React from 'react';
-import {rest} from 'msw';
+import {setupWorker, rest} from 'msw';
 import {setupServer} from 'msw/node';
 // import {render, fireEvent, waitFor, screen} from '@testing-library/react';
-import {render, fireEvent, waitFor, screen} from '../../../test.utils';
+import {render, fireEvent, waitFor, screen, cleanup} from '../../../test.utils';
+// import '@testing-library/react/dont-cleanup-after-each';
 import '@testing-library/jest-dom';
 import PeopleTable from './';
 import People from './..';
 
 const server = setupServer(
   rest.get('/data', (req, res, ctx) => {
-    return res(ctx.json([
-      {
-        "id": 1,
-        "name": "Ann Henry",
-        "jobTitle": "Product manager",
-        "country": "Germany",
-        "salary": 120000,
-        "currency": "EUR",
-        "employment": "employee"
-      },
-      {
-        "id": 2,
-        "name": "Vittoria Janson",
-        "jobTitle": "Pianist",
-        "country": "Italy",
-        "salary": 70000,
-        "currency": "EUR",
-        "employment": "contractor"
-      }
-    ]))
+    const employment = req.url.searchParams.get('employment');
+    const name = req.url.searchParams.get('name_like');
+    
+    if ((employment === 'contractor') || (name === "Vitt")){
+      return res(ctx.json([
+        {
+          "id": 2,
+          "name": "Vittoria Janson",
+          "jobTitle": "Pianist",
+          "country": "Italy",
+          "salary": 70000,
+          "currency": "EUR",
+          "employment": "contractor"
+        }
+      ]))
+    } else if ((employment === 'employee') || (name === "An")){
+      return res(ctx.json([
+        {
+          "id": 1,
+          "name": "Ann Henry",
+          "jobTitle": "Product manager",
+          "country": "Germany",
+          "salary": 120000,
+          "currency": "EUR",
+          "employment": "employee"
+        }
+      ]))
+    } else {
+      return res(ctx.json([
+        {
+          "id": 1,
+          "name": "Ann Henry",
+          "jobTitle": "Product manager",
+          "country": "Germany",
+          "salary": 120000,
+          "currency": "EUR",
+          "employment": "employee"
+        },
+        {
+          "id": 2,
+          "name": "Vittoria Janson",
+          "jobTitle": "Pianist",
+          "country": "Italy",
+          "salary": 70000,
+          "currency": "EUR",
+          "employment": "contractor"
+        }
+      ]))
+    }
+   
   }),
 );
 
-beforeAll(() => server.listen())
+beforeAll(() => jest.setTimeout(90 * 1000));
+
+beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-// test('loads and displays greeting', async () => {
-//   render(<People><PeopleTable
-//     url="/people"/></People>);
-
-//   fireEvent.click(screen.getByText('Load Greeting'))
-
-//   await waitFor(() => screen.getByRole('heading'))
-
-//   expect(screen.getByRole('heading')).toHaveTextContent('hello there')
-//   expect(screen.getByRole('button')).toBeDisabled()
-// })
-
-
 describe('PeopleTable', () => {
-  it('loads and displays greeting', async () => {
-    render(<People><PeopleTable
-      url="/data"/></People>);
-  
-    // fireEvent.click(screen.getByText('Load Greeting'))
-  
-    const rows = await screen.getAllByRole('column');
-    expect(rows).toHaveLength(2);
-    // const items = await screen.findAllByText(/employee/);
-    // expect(items).toHaveLength(1);
+  it('table loads and displays data', async () => {
+    render(<People url="/data"><PeopleTable /></People>);
 
-    // expect(screen.getAllByRole('row')[1]).toHaveTextContent(/Ann Henry/);
-
-    // expect(screen.getByRole('heading')).toHaveTextContent('hello there')
-    // expect(screen.getByRole('button')).toBeDisabled()
+    await (waitFor(() => {
+      expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    }));
+    
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getAllByRole('row')).toHaveLength(3);
   });
 
-  // it('spreads custom attributes', () => {
-  //   const clickFn = jest.fn();
-  //   render(<Checkbox
-  //     id="cb2"
-  //     name="cb2"
-  //     label="My Checkbox"
-  //     data-foo="test"
-  //     onChange={clickFn}
-  //   />);
+  it('filters by employee type contractor', async () => {
+    render(<People url="/data"><PeopleTable /></People>);
 
-  //   const input = screen.getByLabelText('My Checkbox');
-  //   expect(input.getAttribute('data-foo')).toBe('test');
+    await (waitFor(() => {
+      expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    }));
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getAllByRole('row')).toHaveLength(3);
 
-  //   fireEvent.click(input);
-  //   expect(clickFn).toHaveBeenCalledTimes(1);
-  // });
-  // it('gets checked on click', () => {
-  //   const clickFn = jest.fn();
-  //   render(<Checkbox
-  //     id="cb3"
-  //     name="cb3"
-  //     label="My Checkbox"
-  //     onChange={clickFn}
-  //   />);
+    const contractorCheckbox = screen.getByTestId('contractor');
+    const employeeCheckbox = screen.getByTestId('employee');
 
-  //   const input = screen.getByLabelText('My Checkbox');
+    fireEvent.click(contractorCheckbox);
+    expect(contractorCheckbox.checked).toEqual(true);
+    // screen.debug(contractorCheckbox);
+    expect(employeeCheckbox.checked).toEqual(false);
+    
+    await (waitFor(() => {
+      expect(screen.getAllByRole('row')).toHaveLength(2);
+    }));
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getByText(/Vittoria/i).textContent).toBe("Vittoria Janson");
+    expect(screen.queryByText(/Ann/i)).not.toBeInTheDocument();
 
-  //   fireEvent.click(input);
-  //   expect(clickFn).toHaveBeenCalledTimes(1);
-  // })
+  });
+
+  it('filters by employee type employee', async () => {
+    render(<People url="/data"><PeopleTable /></People>);
+
+    await (waitFor(() => {
+      expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    }));
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+
+    const contractorCheckbox = screen.getByTestId('contractor');
+    const employeeCheckbox = screen.getByTestId('employee');
+
+    fireEvent.click(employeeCheckbox);
+    expect(contractorCheckbox.checked).toEqual(false);
+    expect(employeeCheckbox.checked).toEqual(true);
+    
+    await (waitFor(() => {
+      expect(screen.getAllByRole('row')).toHaveLength(2);
+    }));
+    expect(screen.queryByText(/Product manager/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    expect(screen.queryByText(/Italy/i)).not.toBeInTheDocument();
+  });
+
+  it('filters by employee type employee and contractor', async () => {
+    render(<People url="/data"><PeopleTable /></People>);
+
+    await (waitFor(() => {
+      expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    }));
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+
+    const contractorCheckbox = screen.getByTestId('contractor');
+    const employeeCheckbox = screen.getByTestId('employee');
+
+    fireEvent.click(employeeCheckbox);
+    fireEvent.click(contractorCheckbox);
+    expect(contractorCheckbox.checked).toEqual(true);
+    expect(employeeCheckbox.checked).toEqual(true);
+    
+    await (waitFor(() => {
+      expect(screen.getAllByRole('row')).toHaveLength(3);
+    }));
+    expect(screen.queryByText(/Product manager/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    expect(screen.queryByText(/Italy/i)).toBeInTheDocument();
+  });
+
+  it('filters by name', async () => {
+    render(<People url="/data"><PeopleTable /></People>);
+
+    await (waitFor(() => {
+      expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    }));
+    expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+
+    const input = screen.getByTestId('search');
+    fireEvent.change(input, {target: {value: 'An'}});
+
+    await (waitFor(() => {
+      expect(screen.getAllByRole('row')).toHaveLength(2);
+    }));
+    expect(screen.queryByText(/Product manager/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ann/i).textContent).toBe("Ann Henry");
+    expect(screen.queryByText(/Italy/i)).not.toBeInTheDocument();
+
+    fireEvent.change(input, {target: {value: 'Vitt'}});
+    await (waitFor(() => {
+     expect(screen.getByText(/Italy/i).textContent).toBe("Italy");
+    }));
+    expect(screen.getAllByRole('row')).toHaveLength(2);
+    expect(screen.getByText(/Vittoria/i).textContent).toBe("Vittoria Janson");
+    expect(screen.queryByText(/Ann/i)).not.toBeInTheDocument();
+
+  });
+
 });
